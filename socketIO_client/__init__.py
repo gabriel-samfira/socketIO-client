@@ -2,7 +2,7 @@ import websocket
 from anyjson import dumps, loads
 from threading import Thread, Event
 from time import sleep
-from urllib import urlopen
+from urllib2 import urlopen, Request
 
 
 __version__ = '0.3'
@@ -48,11 +48,12 @@ class SocketIO(object):
 
     messageID = 0
 
-    def __init__(self, host, port, Namespace=BaseNamespace, secure=False):
+    def __init__(self, host, port, Namespace=BaseNamespace, secure=False, headers={}):
         self.host = host
         self.port = int(port)
         self.namespace = Namespace(self)
         self.secure = secure
+        self.headers = headers
         self.__connect()
 
         heartbeatInterval = self.heartbeatTimeout - 2
@@ -73,8 +74,9 @@ class SocketIO(object):
     def __connect(self):
         baseURL = '%s:%d/socket.io/%s' % (self.host, self.port, PROTOCOL)
         try:
-            response = urlopen('%s://%s/' % (
-                'https' if self.secure else 'http', baseURL))
+            request = Request('%s://%s/' % (
+                'https' if self.secure else 'http', baseURL), headers=self.headers)
+            response = urlopen(request)
         except IOError:  # pragma: no cover
             raise SocketIOError('Could not start connection')
         if 200 != response.getcode():  # pragma: no cover
