@@ -48,7 +48,7 @@ class SocketIO(object):
 
     messageID = 0
 
-    def __init__(self, host, port, Namespace=BaseNamespace, secure=False, headers={}):
+    def __init__(self, host, port, Namespace=BaseNamespace, secure=False, headers={}, params={}):
         self.host = host
         self.port = int(port)
         self.namespace = Namespace(self)
@@ -66,16 +66,28 @@ class SocketIO(object):
         self.namespaceThread = ListenerThread(self)
         self.namespaceThread.start()
 
+    def parse_params(self, params):
+        if type(params) != dict:
+            return ""
+        p = ""
+        if len(params.keys()) > 0:
+            p = "?"
+        for i in params.keys():
+            p += "%s=%s&" % (str(i), str(params[i]))
+        p = p.rstrip('&')
+        return p
+
     def __del__(self):  # pragma: no cover
         self.heartbeatThread.cancel()
         self.namespaceThread.cancel()
         self.connection.close()
 
     def __connect(self):
+        params = self.parse_params(self.params)
         baseURL = '%s:%d/socket.io/%s' % (self.host, self.port, PROTOCOL)
         try:
-            request = Request('%s://%s/' % (
-                'https' if self.secure else 'http', baseURL), headers=self.headers)
+            request = Request('%s://%s/%s' % (
+                'https' if self.secure else 'http', baseURL), headers=self.headers, params)
             response = urlopen(request)
         except IOError:  # pragma: no cover
             raise SocketIOError('Could not start connection')
@@ -88,8 +100,8 @@ class SocketIO(object):
         self.supportedTransports = responseParts[3].split(',')
         if 'websocket' not in self.supportedTransports:
             raise SocketIOError('Could not parse handshake')  # pragma: no cover
-        socketURL = '%s://%s/websocket/%s' % (
-            'wss' if self.secure else 'ws', baseURL, self.sessionID)
+        socketURL = '%s://%s/websocket/%s%s' % (
+            'wss' if self.secure else 'ws', baseURL, self.sessionID, params)
         self.connection = websocket.create_connection(socketURL)
 
     def _recv_packet(self):
