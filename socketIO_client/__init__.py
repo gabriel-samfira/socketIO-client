@@ -49,6 +49,7 @@ class SocketIO(object):
     messageID = 0
 
     def __init__(self, host, port, Namespace=BaseNamespace, secure=False, headers={}, params={}):
+        self.params = params
         self.host = host
         self.port = int(port)
         self.namespace = Namespace(self)
