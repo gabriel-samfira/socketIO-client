@@ -87,7 +87,7 @@ class SocketIO(object):
         baseURL = '%s:%d/socket.io/%s' % (self.host, self.port, PROTOCOL)
         try:
             request = Request('%s://%s/%s' % (
-                'https' if self.secure else 'http', baseURL), headers=self.headers, params)
+                'https' if self.secure else 'http', baseURL, params), headers=self.headers)
             response = urlopen(request)
         except IOError:  # pragma: no cover
             raise SocketIOError('Could not start connection')
